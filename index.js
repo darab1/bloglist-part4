@@ -3,6 +3,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const mongoose = require('mongoose')
+const config = require('./utils/config')
 
 const blogSchema = new mongoose.Schema({
   title: String,
@@ -23,7 +24,7 @@ const Blog = mongoose.model('Blog', blogSchema)
 
 mongoose.set('strictQuery', false)
 
-const mongoUrl ='mongodb+srv://fullstack:fullstack@cluster0.krnbxxv.mongodb.net/bloglistApp?retryWrites=true&w=majority'
+const mongoUrl = config.MONGODB_URI
 mongoose.connect(mongoUrl)
 
 app.use(cors())
@@ -55,7 +56,7 @@ app.post('/api/blogs', (request, response) => {
     .catch(error => console.log('error in creating a new blog: ', error))
 })
 
-const PORT = 3003
+const PORT = config.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
