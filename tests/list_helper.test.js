@@ -1,6 +1,7 @@
 const listHelper = require('../utils/list_helper')
 const testInputs = require('./test_inputs')
 
+// TOTAL LIKES TEST
 describe('total likes', () => {
   const listWithOneBlog = [
     {
@@ -31,5 +32,19 @@ describe('total likes', () => {
     const result = listHelper.totalLikes(testInputs.blogs)
 
     expect(result).toBe(36)
+  })
+})
+
+describe('favorite blog', () => {
+  const blogWithMostLikes = {
+    title: "Canonical string reduction",
+    author: "Edsger W. Dijkstra",
+    likes: 12
+  }
+
+  test('is the one with the most likes', () => {
+    const result = listHelper.favoriteBlog(testInputs.blogs)
+    
+    expect(result).toEqual(blogWithMostLikes)
   })
 })
