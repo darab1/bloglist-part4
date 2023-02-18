@@ -5,6 +5,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const Blog = require('./models/blogModel')
 const logger = require('./utils/logger')
+const middleware = require('./utils/middleware')
 
 mongoose.set('strictQuery', false)
 
@@ -21,6 +22,7 @@ mongoose.connect(config.MONGODB_URI)
 
 app.use(cors())
 app.use(express.json())
+app.use(middleware.requestLogger)
 
 // GET ALL BLOGS
 app.get('/api/blogs', (request, response) => {
@@ -49,5 +51,8 @@ app.post('/api/blogs', (request, response) => {
     })
     .catch(error => console.log('error in creating a new blog: ', error))
 })
+
+app.use(middleware.unknownEndpoint)
+app.use(middleware.errorHandler)
 
 module.exports = app
