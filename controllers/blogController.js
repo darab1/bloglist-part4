@@ -2,12 +2,9 @@ const blogRouter = require('express').Router()
 const Blog = require('../models/blogModel')
 
 // GET ALL BLOGS
-blogRouter.get('/', (req, res) => {
-  Blog
-    .find({})
-    .then(blogs => {
-      res.json(blogs)
-    })
+blogRouter.get('/', async (req, res) => {
+  const blogs = await Blog.find({})
+  res.status(200).json(blogs)
 })
 
 // CREATE A NEW BLOG
