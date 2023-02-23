@@ -77,6 +77,37 @@ test('if the likes property is missing it will default to 0', async () => {
   expect(blogsAfterPost[blogsAfterPost.length - 1].likes).toBe(0)
 })
 
+test('if the title is missing send 400 Bad Request', async () => {
+  const newBlog = {
+    author: 'Tatsuki Fujimoto',
+    url: 'https://chainsawman.com'
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(400)
+
+  const blogsAfterPost = await testHelper.blogsInDb()
+  expect(blogsAfterPost.length).toBe(initialBlogs.length)
+})
+
+test('if the url is missing send 400 Bad Request', async () => {
+  const newBlog = {
+    title: 'Chainsaw man',
+    author: 'Tatsuki Fujimoto',
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(400)
+
+  const blogsAfterPost = await testHelper.blogsInDb()
+  expect(blogsAfterPost.length).toBe(initialBlogs.length)
+})
+
+
 afterAll(async () => {
   await mongoose.connection.close()
 })
