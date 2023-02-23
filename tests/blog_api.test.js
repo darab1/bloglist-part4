@@ -16,6 +16,7 @@ beforeEach(async () => {
   await Promise.all(promiseArray)
 })
 
+// GET ALL BLOGS
 test('all blogs are returned', async () => {
   const res = await api
     .get('/api/blogs')
@@ -25,6 +26,7 @@ test('all blogs are returned', async () => {
   expect(res.body).toHaveLength(initialBlogs.length)
 })
 
+// TESTING THE EXISTENCE OF THE ID PROPERTY
 test('all blogs contain the id property', async () => {
   const res = await api.get('/api/blogs')
 
@@ -33,6 +35,7 @@ test('all blogs contain the id property', async () => {
   })
 })
 
+// CREATE A NEW BLOG
 test('a valid blog can be added', async () => {
   const newBlog = {
     title: 'Chainsaw man',
@@ -54,6 +57,24 @@ test('a valid blog can be added', async () => {
   expect(titles).toContain(
     'Chainsaw man'
   )
+})
+
+test('if the likes property is missing it will default to 0', async () => {
+  const newBlog = {
+    title: 'Chainsaw man',
+    author: 'Tatsuki Fujimoto',
+    url: 'https://chainsawman.com'
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  const blogsAfterPost = await testHelper.blogsInDb()
+  
+  expect(blogsAfterPost[blogsAfterPost.length - 1].likes).toBe(0)
 })
 
 afterAll(async () => {

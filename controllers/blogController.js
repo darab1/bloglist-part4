@@ -20,13 +20,6 @@ blogRouter.post('/', async (req, res) => {
 
   const savedBlog = await blog.save()
   res.status(201).json(savedBlog)
-
-  // blog
-  //   .save()
-  //   .then(savedBlog => {
-  //     res.status(201).json(savedBlog)
-  //   })
-  //   .catch(err => next(err))
 })
 
 module.exports = blogRouter
