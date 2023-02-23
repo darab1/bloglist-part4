@@ -8,7 +8,7 @@ blogRouter.get('/', async (req, res) => {
 })
 
 // CREATE A NEW BLOG
-blogRouter.post('/', (req, res) => {
+blogRouter.post('/', async (req, res) => {
   const body = req.body
   
   const blog = new Blog({
@@ -18,12 +18,15 @@ blogRouter.post('/', (req, res) => {
     likes: body.likes || 0
   })
 
-  blog
-    .save()
-    .then(savedBlog => {
-      res.status(201).json(savedBlog)
-    })
-    .catch(err => next(err))
+  const savedBlog = await blog.save()
+  res.status(201).json(savedBlog)
+
+  // blog
+  //   .save()
+  //   .then(savedBlog => {
+  //     res.status(201).json(savedBlog)
+  //   })
+  //   .catch(err => next(err))
 })
 
 module.exports = blogRouter
