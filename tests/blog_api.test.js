@@ -16,7 +16,7 @@ beforeEach(async () => {
   await Promise.all(promiseArray)
 })
 
-// GET ALL BLOGS
+// TESTING GETTING ALL BLOGS IN DB
 test('all blogs are returned', async () => {
   const res = await api
     .get('/api/blogs')
@@ -35,7 +35,7 @@ test('all blogs contain the id property', async () => {
   })
 })
 
-// CREATE A NEW BLOG
+// TESTING CREATION OF A NEW BLOG
 test('a valid blog can be added', async () => {
   const newBlog = {
     title: 'Chainsaw man',
@@ -107,6 +107,23 @@ test('if the url is missing send 400 Bad Request', async () => {
   expect(blogsAfterPost.length).toBe(initialBlogs.length)
 })
 
+// TESTING DELETION OF A BLOG
+describe('deletion of a blog', () => {
+  test('succeeds with a valid id', async () => {
+    const blogsAtStart = await testHelper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(204)
+
+    const blogsAfterDeletion = await testHelper.blogsInDb()
+    expect(blogsAfterDeletion).toHaveLength(initialBlogs.length - 1)
+
+    const titles = blogsAfterDeletion.map(blog => blog.title)
+    expect(titles).not.toContain(blogToDelete.title)
+  })
+})
 
 afterAll(async () => {
   await mongoose.connection.close()
