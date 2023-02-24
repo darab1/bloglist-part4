@@ -107,6 +107,29 @@ test('if the url is missing send 400 Bad Request', async () => {
   expect(blogsAfterPost.length).toBe(initialBlogs.length)
 })
 
+// TESTING THE UPDATE OF A NOTE
+describe('updating a blog', () => {
+  test('succeeds with a valid id', async () => {
+    const blogs = await testHelper.blogsInDb()
+    const blogToUpdate = blogs[0]
+
+    const blogObj = {
+      title: 'Title of updated blog',
+      author: 'Me',
+      url: 'updatedBlog.com'
+    }
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(blogObj)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+    
+    const blogsAfterPut = await testHelper.blogsInDb()
+    expect(blogsAfterPut[0].title).toBe('Title of updated blog')
+  })
+})
+
 // TESTING DELETION OF A BLOG
 describe('deletion of a blog', () => {
   test('succeeds with a valid id', async () => {
