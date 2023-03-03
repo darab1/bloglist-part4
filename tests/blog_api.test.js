@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app')
 const api = supertest(app)
+const bcrypt = require('bcrypt')
 const Blog = require('../models/blogModel')
+const User = require('../models/userModel')
 const testHelper = require('./test_helper')
 
 const initialBlogs = require('./test_inputs').blogs
@@ -145,6 +147,109 @@ describe('deletion of a blog', () => {
 
     const titles = blogsAfterDeletion.map(blog => blog.title)
     expect(titles).not.toContain(blogToDelete.title)
+  })
+})
+
+// USER TESTING
+describe('creation of new users is invalid if', () => {
+  beforeEach(async () => {
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('password', 10)
+    const user = new User({ username: 'darab', passwordHash })
+
+    await user.save()
+  })
+
+  test(`username isn't given`, async () => {
+    const usersAtStart = await testHelper.usersInDb()
+
+    const newUser = {
+      password: 'password',
+      name: 'dimitris'
+    }
+
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+    
+    const usersAtEnd = await testHelper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test(`password isn't given`, async () => {
+    const usersAtStart = await testHelper.usersInDb()
+
+    const newUser = {
+      username: 'darab',
+      name: 'dimitris'
+    }
+
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+    
+    const usersAtEnd = await testHelper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test(`username isn't at least 3 characters long`, async () => {
+    const usersAtStart = await testHelper.usersInDb()
+
+    const newUser = {
+      username: 'di',
+      name: 'dimitris'
+    }
+
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+    
+    const usersAtEnd = await testHelper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test(`password isn't at least 3 characters long`, async () => {
+    const usersAtStart = await testHelper.usersInDb()
+
+    const newUser = {
+      password: 'my',
+      name: 'dimitris'
+    }
+
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+    
+    const usersAtEnd = await testHelper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
+  })
+
+  test('username already exists', async () => {
+    const usersAtStart = await testHelper.usersInDb()
+
+    const newUser = {
+      username: 'darab',
+      password: 'mypassword',
+      name: 'dimitris'
+    }
+
+    const result = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+    
+    const usersAtEnd = await testHelper.usersInDb()
+    expect(usersAtEnd).toEqual(usersAtStart)
   })
 })
 

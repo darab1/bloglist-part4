@@ -12,6 +12,28 @@ userRouter.get('/', async (req, res) => {
 userRouter.post('/', async (req, res) => {
   const { username, password, name } = req.body
 
+  if (!username || !password) {
+    return res.status(400).json({
+      error: 'username and password must be provided!'
+    })
+  }
+
+  if (username.length < 3 || password.length < 3) {
+    return res.status(400).json({
+      error: 'username and password must be at least 3 characters long!'
+    })
+  }
+
+  const userInDb = await User.findOne({ username })
+  console.log('userIndb: ', userInDb)
+
+  if (userInDb.username) {
+    return res.status(400).json({
+      error: `User with username ${userInDb.username} already exists! Please try with a different username`
+    })
+  }
+
+
   const salt = 10
   const passwordHash = await bcrypt.hash(password, salt)
 
