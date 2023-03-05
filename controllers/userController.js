@@ -4,7 +4,10 @@ const User = require('../models/userModel')
 
 // GET ALL USERS
 userRouter.get('/', async (req, res) => {
-  const users = await User.find({})
+  const users = await User
+    .find({})
+    .populate('blogs', { url: 1, title: 1, author: 1 })
+  
   res.status(200).json(users)
 })
 
@@ -27,12 +30,11 @@ userRouter.post('/', async (req, res) => {
   const userInDb = await User.findOne({ username })
   console.log('userIndb: ', userInDb)
 
-  if (userInDb.username) {
+  if (userInDb) {
     return res.status(400).json({
       error: `User with username ${userInDb.username} already exists! Please try with a different username`
     })
   }
-
 
   const salt = 10
   const passwordHash = await bcrypt.hash(password, salt)

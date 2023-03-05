@@ -2,7 +2,8 @@ POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
-  "title": "New blog 2",
-  "author": "myself",
-  "url": "this-is-a-valid-url.com"
+  "title": "myblog3",
+  "author": "dimitris3",
+  "url": "myblog3.com",
+  "userId": "6400c98199f4471e271ce830"
 }
