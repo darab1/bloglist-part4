@@ -1,5 +1,6 @@
 const logger = require('./logger')
 
+// LOGGER MIDDLEWARE
 const requestLogger = (req, res, next) => {
   logger.info('Method: ', req.method)
   logger.info('Path: ', req.path)
@@ -8,10 +9,21 @@ const requestLogger = (req, res, next) => {
   next()
 }
 
+// UNKNOWN ENDPOINT MIDDLEWARE
 const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: 'Unknown endpoint' })
 }
 
+// TOKEN EXTRACTOR MIDDLEWARE
+const tokenExtractor = (req, res, next) => {
+  const authorization = req.get('authorization')
+  if (authorization && authorization.startsWith('Bearer ')) {
+    req.token = authorization.split(' ')[1]
+  }
+  next()
+}
+
+// ERROR HANDLING MIDDLEWARES
 const errorHandler = (err, req, res, next) => {
   logger.error(err.message)
 
@@ -29,5 +41,6 @@ const errorHandler = (err, req, res, next) => {
 module.exports = {
   requestLogger,
   unknownEndpoint,
-  errorHandler
+  errorHandler,
+  tokenExtractor
 }
