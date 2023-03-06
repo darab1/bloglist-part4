@@ -6,6 +6,7 @@ const requestLogger = (req, res, next) => {
   logger.info('Path: ', req.path)
   logger.info('Body: ', req.body)
   logger.info('-------------------')
+  
   next()
 }
 
@@ -20,6 +21,7 @@ const tokenExtractor = (req, res, next) => {
   if (authorization && authorization.startsWith('Bearer ')) {
     req.token = authorization.split(' ')[1]
   }
+
   next()
 }
 

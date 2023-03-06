@@ -59,6 +59,33 @@ blogRouter.put('/:id', async (req, res) => {
 
 // DELETE A BLOG
 blogRouter.delete('/:id', async (req, res) => {
+  // await Blog.findByIdAndRemove(req.params.id)
+  // res.status(204).end()
+
+  // 1) get the userId by using the req.params.id value to get the
+  // blog from the db which contains the user field
+  const blog = await Blog.findById(req.params.id)
+  
+  // 2) get the id of the user from decoding the token 
+  const decodedToken = await jwt.verify(req.token, process.env.SECRET)
+
+  if (!decodedToken.id) {
+    return res.status(401).json({
+      error: 'invalid token'
+    })
+  }
+
+  const userId = decodedToken.id
+
+  // 3) compare the two ids
+  // if they are equal, delete the blog otherwise send a 
+  // proper status code if user is invalid
+  if (!(blog.user.toString() === userId.toString())) {
+    return res.status(401).json({
+      error: 'invalid user'
+    })
+  }
+
   await Blog.findByIdAndRemove(req.params.id)
   res.status(204).end()
 })
