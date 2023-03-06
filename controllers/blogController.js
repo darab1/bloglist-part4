@@ -2,6 +2,7 @@ const blogRouter = require('express').Router()
 const Blog = require('../models/blogModel')
 const User = require('../models/userModel')
 const jwt = require('jsonwebtoken')
+const middleware = require('../utils/middleware')
 
 // GET ALL BLOGS
 blogRouter.get('/', async (req, res) => {
@@ -13,18 +14,11 @@ blogRouter.get('/', async (req, res) => {
 })
 
 // CREATE A NEW BLOG
-blogRouter.post('/', async (req, res) => {
+blogRouter.post('/', middleware.userExtractor, async (req, res) => {
   const body = req.body
 
-  const decodedToken = jwt.verify(req.token, process.env.SECRET)
-
-  if (!decodedToken.id) {
-    return res.status(401).json({
-      error: 'invalid token'
-    })
-  }
-  
-  const user = await User.findById(decodedToken.id)
+  // GET USER ID FROM REQ.USER FROM USEREXTRACTOR MIDDLEWARE 
+  const user = await User.findById(req.user)
   
   const blog = new Blog({
     title: body.title,
@@ -58,29 +52,19 @@ blogRouter.put('/:id', async (req, res) => {
 })
 
 // DELETE A BLOG
-blogRouter.delete('/:id', async (req, res) => {
-  // await Blog.findByIdAndRemove(req.params.id)
-  // res.status(204).end()
-
+blogRouter.delete('/:id', middleware.userExtractor, async (req, res) => {
   // 1) get the userId by using the req.params.id value to get the
   // blog from the db which contains the user field
   const blog = await Blog.findById(req.params.id)
+
   
-  // 2) get the id of the user from decoding the token 
-  const decodedToken = await jwt.verify(req.token, process.env.SECRET)
-
-  if (!decodedToken.id) {
-    return res.status(401).json({
-      error: 'invalid token'
-    })
-  }
-
-  const userId = decodedToken.id
+  // 2) save the id of the user which you access from userExtractor
+  const user = req.user
 
   // 3) compare the two ids
   // if they are equal, delete the blog otherwise send a 
   // proper status code if user is invalid
-  if (!(blog.user.toString() === userId.toString())) {
+  if (!(blog.user.toString() === user.toString())) {
     return res.status(401).json({
       error: 'invalid user'
     })
