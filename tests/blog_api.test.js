@@ -10,13 +10,31 @@ const testHelper = require('./test_helper')
 const initialBlogs = require('./test_inputs').blogs
 
 beforeEach(async () => {
+  // delete all blogs from db
   await Blog.deleteMany({})
 
+  // initialize db with the initialBlogs array
   const blogObjects = initialBlogs
     .map(blog => new Blog(blog))
   const promiseArray = blogObjects.map(blog => blog.save())
   await Promise.all(promiseArray)
 })
+
+// LOGIN WITH EXISTING USER
+const login = async () => {
+  const user = {
+    username: 'darab',
+    password: 'password'
+  }
+
+  const loginResponse = await api
+    .post('/api/login')
+    .send(user)
+    .expect(200)
+    .expect('Content-Type', /application\/json/)
+  
+  return loginResponse.body.token
+}
 
 // TESTING GETTING ALL BLOGS IN DB
 test('all blogs are returned', async () => {
@@ -38,75 +56,121 @@ test('all blogs contain the id property', async () => {
 })
 
 // TESTING CREATION OF A NEW BLOG
-test('a valid blog can be added', async () => {
-  const newBlog = {
-    title: 'Chainsaw man',
-    author: 'Tatsuki Fujimoto',
-    url: 'https://chainsawman.com',
-    likes: 100
-  }
+describe('creation of a new blog', () => {
+  beforeEach(async () => {
+    // delete all users from db
+    await User.deleteMany({})
 
-  await api
-    .post('/api/blogs')
-    .send(newBlog)
-    .expect(201)
-    .expect('Content-Type', /application\/json/)
+    // create a new user instance and save it to db
+    const passwordHash = await bcrypt.hash('password', 10)
+    const user = new User({ username: 'darab', passwordHash })
+
+    await user.save()
+  })
+
+  test('succeeds with a valild blog', async () => {
+    const newBlog = {
+      title: 'Chainsaw man',
+      author: 'Tatsuki Fujimoto',
+      url: 'https://chainsawman.com',
+      likes: 100
+    }
+
+    const token = await login()
   
-  const blogsAfterPost = await testHelper.blogsInDb()
-  expect(blogsAfterPost.length).toBe(initialBlogs.length + 1)
-
-  const titles = blogsAfterPost.map(b => b.title)
-  expect(titles).toContain(
-    'Chainsaw man'
-  )
-})
-
-test('if the likes property is missing it will default to 0', async () => {
-  const newBlog = {
-    title: 'Chainsaw man',
-    author: 'Tatsuki Fujimoto',
-    url: 'https://chainsawman.com'
-  }
-
-  await api
-    .post('/api/blogs')
-    .send(newBlog)
-    .expect(201)
-    .expect('Content-Type', /application\/json/)
-
-  const blogsAfterPost = await testHelper.blogsInDb()
+    const postResponse = await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    
+    const blogsAfterPost = await testHelper.blogsInDb()
+    expect(blogsAfterPost.length).toBe(initialBlogs.length + 1)
   
-  expect(blogsAfterPost[blogsAfterPost.length - 1].likes).toBe(0)
-})
+    const titles = blogsAfterPost.map(b => b.title)
+    expect(titles).toContain(
+      'Chainsaw man'
+    )
+  })
 
-test('if the title is missing send 400 Bad Request', async () => {
-  const newBlog = {
-    author: 'Tatsuki Fujimoto',
-    url: 'https://chainsawman.com'
-  }
+  test(`succeeds with the value of the likes property defaulting to 0 if it's missing`, async () => {
+    const newBlog = {
+      title: 'Chainsaw man',
+      author: 'Tatsuki Fujimoto',
+      url: 'https://chainsawman.com'
+    }
 
-  await api
-    .post('/api/blogs')
-    .send(newBlog)
-    .expect(400)
+    const token = await login()
+  
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+  
+    const blogsAfterPost = await testHelper.blogsInDb()
+    
+    expect(blogsAfterPost[blogsAfterPost.length - 1].likes).toBe(0)
+  })
 
-  const blogsAfterPost = await testHelper.blogsInDb()
-  expect(blogsAfterPost.length).toBe(initialBlogs.length)
-})
+  test('fails with 400 Bad request if the title property is missing', async () => {
+    const newBlog = {
+      author: 'Tatsuki Fujimoto',
+      url: 'https://chainsawman.com'
+    }
 
-test('if the url is missing send 400 Bad Request', async () => {
-  const newBlog = {
-    title: 'Chainsaw man',
-    author: 'Tatsuki Fujimoto',
-  }
+    const token = await login()
+  
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+  
+    const blogsAfterPost = await testHelper.blogsInDb()
+    expect(blogsAfterPost.length).toBe(initialBlogs.length)
+  })
 
-  await api
-    .post('/api/blogs')
-    .send(newBlog)
-    .expect(400)
+  test('fails with 400 Bad request if the url property is missing', async () => {
+    const newBlog = {
+      title: 'Chainsaw man',
+      author: 'Tatsuki Fujimoto',
+    }
 
-  const blogsAfterPost = await testHelper.blogsInDb()
-  expect(blogsAfterPost.length).toBe(initialBlogs.length)
+    const token = await login()
+  
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+  
+    const blogsAfterPost = await testHelper.blogsInDb()
+    expect(blogsAfterPost.length).toBe(initialBlogs.length)
+  })
+
+  test('fails with 401 Unauthorize if the token is not provided', async () => {
+    const newBlog = {
+      title: 'Chainsaw man',
+      author: 'Tatsuki Fujimoto',
+      url: 'https://chainsawman.com',
+      likes: 100
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .set('Authorization', '')
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+    
+    const blogsAfterPost = await testHelper.blogsInDb()
+    expect(blogsAfterPost.length).toBe(initialBlogs.length)
+
+  })
+
 })
 
 // TESTING THE UPDATE OF A NOTE
@@ -135,26 +199,49 @@ describe('updating a blog', () => {
 // TESTING DELETION OF A BLOG
 describe('deletion of a blog', () => {
   test('succeeds with a valid id', async () => {
-    const blogsAtStart = await testHelper.blogsInDb()
-    const blogToDelete = blogsAtStart[0]
+    // delete all users from db
+    await User.deleteMany({})
+
+    // create a new user instance and save it to db
+    const passwordHash = await bcrypt.hash('password', 10)
+    const user = new User({ username: 'darab', passwordHash })
+
+    const newUser = await user.save()
+
+    const newBlog = new Blog({
+      title: 'new blog',
+      author: 'someone',
+      url: 'newblog.com',
+      likes: 40,
+      user: newUser.id
+    })
+
+    const savedBlog = await newBlog.save()
+
+    const blogsAtStart = await Blog.find({})
+
+    const token = await login()
 
     await api
-      .delete(`/api/blogs/${blogToDelete.id}`)
+      .delete(`/api/blogs/${savedBlog.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204)
+    
+    const blogsAtEnd = await Blog.find({})
+    expect(blogsAtEnd).toHaveLength(blogsAtStart.length - 1)
 
-    const blogsAfterDeletion = await testHelper.blogsInDb()
-    expect(blogsAfterDeletion).toHaveLength(initialBlogs.length - 1)
-
-    const titles = blogsAfterDeletion.map(blog => blog.title)
-    expect(titles).not.toContain(blogToDelete.title)
+    const titles = blogsAtEnd.map(blog => blog.title)
+    expect(titles).not.toContain(savedBlog.title)
   })
 })
 
 // USER TESTING
 describe('creation of new users is invalid if', () => {
   beforeEach(async () => {
+    // delete all users from db
     await User.deleteMany({})
 
+    // create a new user instance and save it to db
     const passwordHash = await bcrypt.hash('password', 10)
     const user = new User({ username: 'darab', passwordHash })
 

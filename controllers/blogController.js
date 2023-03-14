@@ -17,6 +17,11 @@ blogRouter.get('/', async (req, res) => {
 blogRouter.post('/', middleware.userExtractor, async (req, res) => {
   const body = req.body
 
+  // Create a 401 error if token is not provided
+  if (!req.token) {
+    return res.status(401).send({ error: 'Token is required'})
+  }
+
   // GET USER ID FROM REQ.USER FROM USEREXTRACTOR MIDDLEWARE 
   const user = await User.findById(req.user)
   
